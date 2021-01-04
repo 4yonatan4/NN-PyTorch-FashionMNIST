@@ -13,8 +13,33 @@ IMAGE_SIZE = 28 * 28
 
 
 class Model_A(nn.Module):
+    '''
+    Model A - Neural Network with two hidden layers.
+    first layer - size 100 with ReLU Activation.
+    second layer - size 50 with ReLU Activation.
+    '''
     def __init__(self, image_size):
         super(Model_A, self).__init__()
+        self.image_size = image_size
+        self.fc0 = nn.Linear(image_size, 100)
+        self.fc1 = nn.Linear(100, 50)
+        self.fc2 = nn.Linear(50, 10)
+
+    def forward(self, x):
+        x = x.view(-1, self.image_size)
+        x = F.relu(self.fc0(x))
+        x = F.relu(self.fc1(x))
+        return F.log_softmax(self.fc2(x), -1)
+
+
+class Model_B(nn.Module):
+    '''
+        Model B - Neural Network with two hidden layers.
+        first layer - size 100 with ReLU Activation.
+        second layer - size 50 with ReLU Activation.
+        '''
+    def __init__(self, image_size):
+        super(Model_B, self).__init__()
         self.image_size = image_size
         self.fc0 = nn.Linear(image_size, 100)
         self.fc1 = nn.Linear(100, 50)
@@ -136,6 +161,24 @@ def test(model, test_x, test_y):
 #     )
 #     return my_transforms, train_loader, test_loader
 
+def plot(train_losses, val_losses, train_acc, val_acc, nepochs):
+    # plot train and validation loss as a function of #epochs
+    epochs = [*range(1, nepochs + 1)]
+    plt.plot(epochs, train_losses, label='Training Loss')
+    plt.plot(epochs, val_losses, label='Validation Loss')
+    plt.title('Training and Validation Loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.show()
+
+    plt.plot(epochs, train_acc, label='Training Accuracy')
+    plt.plot(epochs, val_acc, label='Validation Accuracy')
+    plt.title('Training and Validation Accuracy')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.legend()
+    plt.show()
 
 def main():
     # Initial dataset and transforms
@@ -163,30 +206,33 @@ def main():
     model_a = Model_A(image_size=IMAGE_SIZE)
     # Define the optimizer function and the value of the learning rate
     lr = 0.00001
-    # Try to change to Adam, Adadelta, RMSprop
+    # SGD optimizer
     optimizer = optim.SGD(model_a.parameters(), lr=lr)
     nepochs = 10
     # Train
     train_losses, val_losses, train_acc, val_acc = train_model(model_a, optimizer, criterion, nepochs, train_x, train_y,
                                                                val_x, val_y)
-
     # plot train and validation loss as a function of #epochs
-    epochs = [*range(1, nepochs + 1)]
-    plt.plot(epochs, train_losses, label='Training Loss')
-    plt.plot(epochs, val_losses, label='Validation Loss')
-    plt.title('Training and Validation Loss')
-    plt.xlabel('Epochs')
-    plt.ylabel('Loss')
-    plt.legend()
-    plt.show()
+    plot(train_losses, val_losses, train_acc, val_acc, nepochs)
 
-    plt.plot(epochs, train_acc, label='Training Loss')
-    plt.plot(epochs, val_acc, label='Validation Loss')
-    plt.title('Training and Validation Accuracy')
-    plt.xlabel('Epochs')
-    plt.ylabel('Loss')
-    plt.legend()
-    plt.show()
+    # ================================================== MODEL B ==================================================
+    # # Build the architecture of the network
+    # model_b = Model_B(image_size=IMAGE_SIZE)
+    # # Define the optimizer function and the value of the learning rate
+    # lr = 0.00001
+    # # Adam optimizer
+    # optimizer = optim.Adam(model_b.parameters(), lr=lr)
+    # nepochs = 10
+    # # Train
+    # train_losses, val_losses, train_acc, val_acc = train_model(model_b, optimizer, criterion, nepochs, train_x, train_y,
+    #                                                            val_x, val_y)
+    # # plot train and validation loss as a function of #epochs
+    # plot(train_losses, val_losses, train_acc, val_acc, nepochs)
+
+
+
+
+
 
     # Test the model
     # test(model_a, test_x, test_y)
