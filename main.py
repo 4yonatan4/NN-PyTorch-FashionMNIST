@@ -94,6 +94,34 @@ class Model_D(nn.Module):
         self.batch_x1 = torch.nn.BatchNorm1d(100)
         self.batch_x2 = torch.nn.BatchNorm1d(50)
 
+class Model_E(nn.Module):
+    '''
+        Model E - Neural Network with two hidden layers.
+        first layer - size 128 with ReLU Activation.
+        second layer - size 64 with ReLU Activation.
+        third layer - size 10 with ReLU Activation.
+        fourth layer - size 10 with ReLU Activation.
+        fifth layer - size 10 with ReLU Activation.
+        '''
+
+    def __init__(self):
+        super(Model_E, self).__init__()
+        self.image_size = IMAGE_SIZE
+        self.fc0 = torch.nn.Linear(IMAGE_SIZE, 128)
+        self.fc1 = torch.nn.Linear(128, 64)
+        self.fc2 = torch.nn.Linear(64, 10)
+        self.fc3 = torch.nn.Linear(10, 10)
+        self.fc4 = torch.nn.Linear(10, 10)
+
+    def forward(self, x):
+        x = x.view(-1, IMAGE_SIZE)
+        x = F.relu(self.fc0(x))  # Hidden layer 1
+        x = F.relu(self.fc1(x))  # Hidden layer 2
+        x = F.relu(self.fc2(x))  # Hidden layer 3
+        x = F.relu(self.fc3(x))  # Hidden layer 4
+        x = F.relu(self.fc4(x))  # Hidden layer 5
+        return F.log_softmax(x, -1)
+
     def forward(self, x):
         x = x.view(-1, IMAGE_SIZE)
         x = self.fc0(x)
@@ -257,19 +285,19 @@ def main():
     val_y = DataLoader(dataset=val_y, batch_size=1)
     # Choose loss function
     criterion = nn.NLLLoss()
-    # ================================================== MODEL A ==================================================
-    # Build the architecture of the network
-    model_a = Model_A()
-    # Define the optimizer function and the value of the learning rate
-    lr = 0.00001
-    # SGD optimizer
-    optimizer = optim.SGD(model_a.parameters(), lr=lr)
-    nepochs = 10
-    # Train
-    train_losses, val_losses, train_acc, val_acc = train_model(model_a, optimizer, criterion, nepochs, train_x, train_y,
-                                                               val_x, val_y, batch_size=1)
-    # plot train and validation loss as a function of #epochs
-    plot(train_losses, val_losses, train_acc, val_acc, nepochs)
+    # # ================================================== MODEL A ==================================================
+    # # Build the architecture of the network
+    # model_a = Model_A()
+    # # Define the optimizer function and the value of the learning rate
+    # lr = 0.00001
+    # # SGD optimizer
+    # optimizer = optim.SGD(model_a.parameters(), lr=lr)
+    # nepochs = 10
+    # # Train
+    # train_losses, val_losses, train_acc, val_acc = train_model(model_a, optimizer, criterion, nepochs, train_x, train_y,
+    #                                                            val_x, val_y, batch_size=1)
+    # # plot train and validation loss as a function of #epochs
+    # plot(train_losses, val_losses, train_acc, val_acc, nepochs)
 
     # ================================================== MODEL B ==================================================
     # # Build the architecture of the network
@@ -284,6 +312,20 @@ def main():
     #                                                            val_x, val_y)
     # # plot train and validation loss as a function of #epochs
     # plot(train_losses, val_losses, train_acc, val_acc, nepochs)
+
+    # ================================================== MODEL E ==================================================
+    # Build the architecture of the network
+    model_e = Model_E()
+    # Define the optimizer function and the value of the learning rate
+    lr = 0.00001
+    # SGD optimizer
+    optimizer = optim.Adam(model_e.parameters(), lr=lr)
+    nepochs = 10
+    # Train
+    train_losses, val_losses, train_acc, val_acc = train_model(model_e, optimizer, criterion, nepochs, train_x, train_y,
+                                                               val_x, val_y, batch_size=1)
+    # plot train and validation loss as a function of #epochs
+    plot(train_losses, val_losses, train_acc, val_acc, nepochs)
 
     # Test the model
     # test(model_a, test_x, test_y)
