@@ -3,6 +3,7 @@ import torch
 import sys
 import numpy as np
 from sklearn.model_selection import train_test_split
+from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 import matplotlib.pyplot as plt
 from torch import nn, optim
@@ -18,15 +19,16 @@ class Model_A(nn.Module):
     first layer - size 100 with ReLU Activation.
     second layer - size 50 with ReLU Activation.
     '''
-    def __init__(self, image_size):
+
+    def __init__(self, ):
         super(Model_A, self).__init__()
-        self.image_size = image_size
-        self.fc0 = nn.Linear(image_size, 100)
+        self.image_size = IMAGE_SIZE
+        self.fc0 = nn.Linear(IMAGE_SIZE, 100)
         self.fc1 = nn.Linear(100, 50)
         self.fc2 = nn.Linear(50, 10)
 
     def forward(self, x):
-        x = x.view(-1, self.image_size)
+        x = x.view(-1, IMAGE_SIZE)
         x = F.relu(self.fc0(x))
         x = F.relu(self.fc1(x))
         return F.log_softmax(self.fc2(x), -1)
@@ -38,22 +40,71 @@ class Model_B(nn.Module):
         first layer - size 100 with ReLU Activation.
         second layer - size 50 with ReLU Activation.
         '''
-    def __init__(self, image_size):
+
+    def __init__(self):
         super(Model_B, self).__init__()
-        self.image_size = image_size
-        self.fc0 = nn.Linear(image_size, 100)
+        self.image_size = IMAGE_SIZE
+        self.fc0 = nn.Linear(IMAGE_SIZE, 100)
         self.fc1 = nn.Linear(100, 50)
         self.fc2 = nn.Linear(50, 10)
 
     def forward(self, x):
-        x = x.view(-1, self.image_size)
+        x = x.view(-1, IMAGE_SIZE)
         x = F.relu(self.fc0(x))
         x = F.relu(self.fc1(x))
         return F.log_softmax(self.fc2(x), -1)
 
 
+class Model_C(nn.Module):
+    '''
+        Model B - Neural Network with two hidden layers.
+        first layer - size 100 with ReLU Activation.
+        second layer - size 50 with ReLU Activation.
+        '''
+
+    def __init__(self):
+        super(Model_C, self).__init__()
+        self.image_size = IMAGE_SIZE
+        self.fc0 = nn.Linear(IMAGE_SIZE, 100)
+        self.fc1 = nn.Linear(100, 50)
+        self.fd1 = torch.nn.Dropout(p=0.001)
+        self.fd2 = torch.nn.Dropout(p=0.001)
+
+    def forward(self, x):
+        x = x.view(-1, IMAGE_SIZE)
+        x = self.fd1(x)
+        x = F.relu(self.fc0(x))
+        x = self.fd2(x)
+        x = F.relu(self.fc1(x))
+        return F.log_softmax(x, -1)
+
+
+class Model_D(nn.Module):
+    '''
+        Model B - Neural Network with two hidden layers.
+        first layer - size 100 with ReLU Activation.
+        second layer - size 50 with ReLU Activation.
+        '''
+
+    def __init__(self):
+        super(Model_D, self).__init__()
+        self.image_size = IMAGE_SIZE
+        self.fc0 = torch.nn.Linear(IMAGE_SIZE, 100)
+        self.fc1 = torch.nn.Linear(100, 50)
+        self.batch_x1 = torch.nn.BatchNorm1d(100)
+        self.batch_x2 = torch.nn.BatchNorm1d(50)
+
+    def forward(self, x):
+        x = x.view(-1, IMAGE_SIZE)
+        x = self.fc0(x)
+        x = F.relu(self.batch_x1(x))
+        x = self.fc1(x)
+        x = F.relu(self.batch_x2(x))
+        return F.log_softmax(x, -1)
+
+
 def train_model(model, optimizer, criterion,
-                nepochs, train_x, train_y, val_x, val_y):
+                nepochs, train_x, train_y, val_x, val_y, batch_size):
     '''
     Train a pytorch model and evaluate it every epoch.
     Params:
@@ -79,7 +130,7 @@ def train_model(model, optimizer, criterion,
             model.train()  # set model in train mode
             optimizer.zero_grad()
             model_out = model(image)
-            a = torch.reshape(label, (1,))
+            a = torch.reshape(label, (batch_size,))
             loss = criterion(model_out, a.long())
             loss.backward()
             # one gradient descent step
@@ -171,7 +222,7 @@ def plot(train_losses, val_losses, train_acc, val_acc, nepochs):
     plt.ylabel('Loss')
     plt.legend()
     plt.show()
-
+    # hello
     plt.plot(epochs, train_acc, label='Training Accuracy')
     plt.plot(epochs, val_acc, label='Validation Accuracy')
     plt.title('Training and Validation Accuracy')
@@ -180,6 +231,7 @@ def plot(train_losses, val_losses, train_acc, val_acc, nepochs):
     plt.legend()
     plt.show()
 
+
 def main():
     # Initial dataset and transforms
     # my_transforms, train_loader, test_loader = init()
@@ -187,7 +239,7 @@ def main():
     # Get data input and create numpy array
     # Test_x is just for the submit, we don't use it during debugging
     train_data_x, train_data_y, test_x = np.loadtxt(sys.argv[1]), np.loadtxt(sys.argv[2]), np.loadtxt(sys.argv[3])
-
+    model_a = None
     # Split the train data to: 80% train, 20% validation
     train_x, val_x, train_y, val_y = train_test_split(train_data_x, train_data_y, test_size=0.2, random_state=42)
     train_x = train_x.astype(np.float32)
@@ -195,15 +247,19 @@ def main():
     val_x = val_x.astype(np.float32)
     val_y = val_y.astype(np.float32)
 
-    # Create tensors from the data.
-    train_x, val_x, train_y, val_y = torch.from_numpy(train_x), torch.from_numpy(val_x), torch.from_numpy(
-        train_y), torch.from_numpy(val_y)
+    # Create tensors from the data
 
+    # train_x, val_x, train_y, val_y = torch.from_numpy(train_x), torch.from_numpy(val_x), torch.from_numpy(
+    #    train_y), torch.from_numpy(val_y)
+    train_x = DataLoader(dataset=train_x, batch_size=1)
+    val_x = DataLoader(dataset=val_x, batch_size=1)
+    train_y = DataLoader(dataset=train_y, batch_size=1)
+    val_y = DataLoader(dataset=val_y, batch_size=1)
     # Choose loss function
     criterion = nn.NLLLoss()
     # ================================================== MODEL A ==================================================
     # Build the architecture of the network
-    model_a = Model_A(image_size=IMAGE_SIZE)
+    model_a = Model_A()
     # Define the optimizer function and the value of the learning rate
     lr = 0.00001
     # SGD optimizer
@@ -211,7 +267,7 @@ def main():
     nepochs = 10
     # Train
     train_losses, val_losses, train_acc, val_acc = train_model(model_a, optimizer, criterion, nepochs, train_x, train_y,
-                                                               val_x, val_y)
+                                                               val_x, val_y, batch_size=1)
     # plot train and validation loss as a function of #epochs
     plot(train_losses, val_losses, train_acc, val_acc, nepochs)
 
@@ -228,11 +284,6 @@ def main():
     #                                                            val_x, val_y)
     # # plot train and validation loss as a function of #epochs
     # plot(train_losses, val_losses, train_acc, val_acc, nepochs)
-
-
-
-
-
 
     # Test the model
     # test(model_a, test_x, test_y)
