@@ -1,8 +1,6 @@
-import sklearn as sklearn
 import torch
 import sys
 import numpy as np
-from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 import matplotlib.pyplot as plt
@@ -12,7 +10,7 @@ from scipy import stats
 
 # Constants
 IMAGE_SIZE = 28 * 28
-BATCH_SIZE = 200
+BATCH_SIZE = 50
 NEPOCHS = 10
 PERCENT = 0.8
 
@@ -40,10 +38,10 @@ class Model_A(nn.Module):
 
 class Model_B(nn.Module):
     '''
-        Model B - Neural Network with two hidden layers.
-        first layer - size 100 with ReLU Activation.
-        second layer - size 50 with ReLU Activation.
-        '''
+    Model B - Neural Network with two hidden layers.
+    first layer - size 100 with ReLU Activation.
+    second layer - size 50 with ReLU Activation.
+    '''
 
     def __init__(self):
         super(Model_B, self).__init__()
@@ -61,10 +59,10 @@ class Model_B(nn.Module):
 
 class Model_C(nn.Module):
     '''
-        Model C - Neural Network Dropout on Model A.
-        first layer - size 100 with ReLU Activation then Dropout.
-        second layer - size 50 with ReLU Activation then Dropout.
-        '''
+    Model C - Neural Network Dropout on Model A.
+    first layer - size 100 with ReLU Activation then Dropout.
+    second layer - size 50 with ReLU Activation then Dropout.
+    '''
 
     def __init__(self):
         super(Model_C, self).__init__()
@@ -142,11 +140,33 @@ class Model_E(nn.Module):
         x = F.relu(self.fc4(x))  # Hidden layer 5
         return F.log_softmax(x, -1)
 
+class Model_F(nn.Module):
+    '''
+        Model F - Neural Network with two hidden layers.
+        first layer - size 128 with Sigmoid Activation.
+        second layer - size 64 with Sigmoid Activation.
+        third layer - size 10 with Sigmoid Activation.
+        fourth layer - size 10 with Sigmoid Activation.
+        fifth layer - size 10 with Sigmoid Activation.
+        '''
 
-def shuffle(first_set, second_set):
-    assert len(first_set) == len(second_set)
-    permutation = np.random.permutation(len(first_set))
-    return first_set[permutation], second_set[permutation]
+    def __init__(self):
+        super(Model_F, self).__init__()
+        self.image_size = IMAGE_SIZE
+        self.fc0 = torch.nn.Linear(IMAGE_SIZE, 128)
+        self.fc1 = torch.nn.Linear(128, 64)
+        self.fc2 = torch.nn.Linear(64, 10)
+        self.fc3 = torch.nn.Linear(10, 10)
+        self.fc4 = torch.nn.Linear(10, 10)
+
+    def forward(self, x):
+        x = x.view(-1, IMAGE_SIZE)
+        x = torch.sigmoid(self.fc0(x))  # Hidden layer 1
+        x = torch.sigmoid(self.fc1(x))  # Hidden layer 2
+        x = torch.sigmoid(self.fc2(x))  # Hidden layer 3
+        x = torch.sigmoid(self.fc3(x))  # Hidden layer 4
+        x = torch.sigmoid(self.fc4(x))  # Hidden layer 5
+        return F.log_softmax(x, -1)
 
 
 def train_model(model, optimizer, criterion, train_x, train_y, val_x, val_y, name_of_model, batch_size):
@@ -265,12 +285,12 @@ def test(model, test_x, test_y):
 #     )
 #     return my_transforms, train_loader, test_loader
 
-def plot(train_losses, val_losses, train_acc, val_acc, nepochs):
+def plot(train_losses, val_losses, train_acc, val_acc, nepochs, model_str):
     # plot train and validation loss as a function of #epochs
     epochs = [*range(1, nepochs + 1)]
     plt.plot(epochs, train_losses, label='Training Loss')
     plt.plot(epochs, val_losses, label='Validation Loss')
-    plt.title('Training and Validation Loss')
+    plt.title('Training and Validation Loss - ' + model_str)
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
     plt.legend()
@@ -278,7 +298,7 @@ def plot(train_losses, val_losses, train_acc, val_acc, nepochs):
 
     plt.plot(epochs, train_acc, label='Training Accuracy')
     plt.plot(epochs, val_acc, label='Validation Accuracy')
-    plt.title('Training and Validation Accuracy')
+    plt.title('Training and Validation Accuracy - ' + model_str)
     plt.xlabel('Epochs')
     plt.ylabel('Accuracy')
     plt.legend()
@@ -327,68 +347,86 @@ def main():
     # ================================================== MODEL A ==================================================
     # Build the architecture of the network
     model_a = Model_A()
+    model_str = 'A'
     # Define the optimizer function and the value of the learning rate
     lr = 0.1
     # SGD optimizer
     optimizer = optim.SGD(model_a.parameters(), lr=lr)
     # Train
     train_losses, val_losses, train_acc, val_acc = train_model(model_a, optimizer, criterion, train_x, train_y,
-                                                                val_x, val_y, name_of_model='A', batch_size=BATCH_SIZE)
+                                                               val_x, val_y, name_of_model='A', batch_size=BATCH_SIZE)
     # plot train and validation loss as a function of #epochs
-    plot(train_losses, val_losses, train_acc, val_acc, NEPOCHS)
+    plot(train_losses, val_losses, train_acc, val_acc, NEPOCHS, model_str)
 
-    # ================================================== MODEL B ==================================================
-    # Build the architecture of the network
-    model_b = Model_B()
-    # Define the optimizer function and the value of the learning rate
-    lr = 0.001
-    # SGD optimizer
-    optimizer = optim.Adam(model_b.parameters(), lr=lr)
-    # Train
-    train_losses, val_losses, train_acc, val_acc = train_model(model_b, optimizer, criterion, train_x, train_y,
-                                                                val_x, val_y, name_of_model='B', batch_size=BATCH_SIZE)
-    # plot train and validation loss as a function of #epochs
-    plot(train_losses, val_losses, train_acc, val_acc, NEPOCHS)
+    # # ================================================== MODEL B ==================================================
+    # # Build the architecture of the network
+    # model_b = Model_B()
+    # # Define the optimizer function and the value of the learning rate
+    # lr = 0.001
+    # # SGD optimizer
+    # optimizer = optim.Adam(model_b.parameters(), lr=lr)
+    # # Train
+    # train_losses, val_losses, train_acc, val_acc = train_model(model_b, optimizer, criterion, train_x, train_y,
+    #                                                            val_x, val_y, name_of_model='B', batch_size=BATCH_SIZE)
+    # # plot train and validation loss as a function of #epochs
+    # plot(train_losses, val_losses, train_acc, val_acc, NEPOCHS)
+    #
+    # # ================================================== MODEL C ==================================================
+    # # Build the architecture of the network
+    # model_c = Model_C()
+    # # Define the optimizer function and the value of the learning rate
+    # lr = 0.001
+    # # SGD optimizer
+    # optimizer = optim.Adagrad(model_c.parameters(), lr=lr)
+    # # Train
+    # train_losses, val_losses, train_acc, val_acc = train_model(model_c, optimizer, criterion, train_x, train_y,
+    #                                                            val_x, val_y, name_of_model='C', batch_size=BATCH_SIZE)
+    # # plot train and validation loss as a function of #epochs
+    # plot(train_losses, val_losses, train_acc, val_acc, NEPOCHS)
+    #
+    # # ================================================== MODEL D ==================================================
+    # # Build the architecture of the network
+    # model_d = Model_D()
+    # # Define the optimizer function and the value of the learning rate
+    # lr = 0.01
+    # # SGD optimizer
+    # optimizer = optim.Adagrad(model_d.parameters(), lr=lr)
+    # # Train
+    # train_losses, val_losses, train_acc, val_acc = train_model(model_d, optimizer, criterion, train_x, train_y,
+    #                                                            val_x, val_y, name_of_model='D', batch_size=BATCH_SIZE)
+    # # plot train and validation loss as a function of #epochs
+    # plot(train_losses, val_losses, train_acc, val_acc, NEPOCHS)
+    #
+    # # ================================================== MODEL E ==================================================
+    # # Build the architecture of the network
+    # model_e = Model_E()
+    # # Define the optimizer function and the value of the learning rate
+    # lr = 0.001
+    # # SGD optimizer
+    # optimizer = optim.Adam(model_e.parameters(), lr=lr)
+    # # Train
+    # train_losses, val_losses, train_acc, val_acc = train_model(model_e, optimizer, criterion, train_x, train_y,
+    #                                                            val_x, val_y, name_of_model='E', batch_size=BATCH_SIZE)
+    # # plot train and validation loss as a function of #epochs
+    # plot(train_losses, val_losses, train_acc, val_acc, NEPOCHS)
+    #
+    # # ================================================== MODEL E ==================================================
+    # # Build the architecture of the network
+    # model_f = Model_F()
+    # # Define the optimizer function and the value of the learning rate
+    # lr = 0.001
+    # # SGD optimizer
+    # optimizer = optim.Adam(model_f.parameters(), lr=lr)
+    # # Train
+    # train_losses, val_losses, train_acc, val_acc = train_model(model_f, optimizer, criterion, train_x, train_y,
+    #                                                            val_x, val_y, name_of_model='F', batch_size=BATCH_SIZE)
+    # # plot train and validation loss as a function of #epochs
+    # plot(train_losses, val_losses, train_acc, val_acc, NEPOCHS)
 
-    # ================================================== MODEL C ==================================================
-    # Build the architecture of the network
-    model_c = Model_C()
-    # Define the optimizer function and the value of the learning rate
-    lr = 0.001
-    # SGD optimizer
-    optimizer = optim.Adagrad(model_c.parameters(), lr=lr)
-    # Train
-    train_losses, val_losses, train_acc, val_acc = train_model(model_c, optimizer, criterion, train_x, train_y,
-                                                                val_x, val_y, name_of_model='C', batch_size=BATCH_SIZE)
-    # plot train and validation loss as a function of #epochs
-    plot(train_losses, val_losses, train_acc, val_acc, NEPOCHS)
-
-    # ================================================== MODEL D ==================================================
-    # Build the architecture of the network
-    model_d = Model_D()
-    # Define the optimizer function and the value of the learning rate
-    lr = 0.01
-    # SGD optimizer
-    optimizer = optim.Adagrad(model_d.parameters(), lr=lr)
-    # Train
-    train_losses, val_losses, train_acc, val_acc = train_model(model_d, optimizer, criterion, train_x, train_y,
-                                                                val_x, val_y, name_of_model='D', batch_size=BATCH_SIZE)
-    # plot train and validation loss as a function of #epochs
-    plot(train_losses, val_losses, train_acc, val_acc, NEPOCHS)
-
-    # ================================================== MODEL E ==================================================
-    # Build the architecture of the network
-    model_e = Model_E()
-    # Define the optimizer function and the value of the learning rate
-    lr = 0.001
-    # SGD optimizer
-    optimizer = optim.Adam(model_e.parameters(), lr=lr)
-    # Train
-    train_losses, val_losses, train_acc, val_acc = train_model(model_e, optimizer, criterion, train_x, train_y,
-                                                                val_x, val_y, name_of_model='E', batch_size=BATCH_SIZE)
-    # plot train and validation loss as a function of #epochs
-    plot(train_losses, val_losses, train_acc, val_acc, NEPOCHS)
-
+    #     test_loader = torch.utils.data.DataLoader(
+    #         datasets.FashionMNIST('./data', train=False, transform=my_transforms),
+    #         batch_size=64, shuffle=False
+    #     )
 
 if __name__ == '__main__':
     main()
